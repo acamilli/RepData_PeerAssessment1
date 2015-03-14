@@ -1,44 +1,214 @@
----
-title: "Project Assessment 1 - Reproducible Research"
-author: "Alberto Camilli"
-date: "Saturday, March 14, 2015"
-output: html_document
----
+# Project Assessment 1 - Reproducible Research
+Alberto Camilli  
+Saturday, March 14, 2015  
 
 ### Loading and preprocessing the data.
 
-First I´m going to read the data then I´ll eliminate the rows with NAs and generate a df with no NA (dfNOna)
+First IÂ´m going to read the data then IÂ´ll eliminate the rows with NAs and generate a df with no NA (dfNOna)
 
 
-Now I´m going calculate average values over the remaining data.First I need to kwow the #days and the #steps per day. Results will be stored in a table (tabela1) so it can be retrieved whenever wanted. The total #steps per day will be plotted. Mean and median are subsequently calculated.
+```r
+setwd("F:/Coursera Reproducible Research")
+df<-read.csv("./activity.csv")
+#eliminate NA rows 
+dfNOna<-df[complete.cases(df),]
+```
 
+Now IÂ´m going calculate average values over the remaining data.First I need to kwow the #days and the #steps per day. Results will be stored in a table (tabela1) so it can be retrieved whenever wanted. The total #steps per day will be plotted. Mean and median are subsequently calculated.
+
+
+```r
+days<-levels(dfNOna$date)
+tabela1<-c()
+for (day in days){
+  ss<-subset(dfNOna, date==day, select=steps)
+  values<-c(day, sum(ss$steps))
+  tabela1<-rbind(values, tabela1)
+}
+tabela1<-apply(tabela1,2,rev)
+plot(tabela1[,2],main="All Days (NAs excluded)", xlab="days",ylab="steps", type="h") #(Q2. histogram)
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+
+```r
+# (Q3. mean and median # steps per day, with NA excluded)
+```
 ### What is mean total number of steps taken per day?
 
 Mean and median for the expurged data frame:
-What is the average daily activity pattern?
 
-Now I want to know the averages over each 5 minute interval. I´ll build up a second table, tabela2  and then plot the #steps per 5 minute interval
+```r
+mean(as.numeric(tabela1[,2]))
+```
+
+```
+## [1] 9354.23
+```
+
+```r
+median(as.numeric(tabela1[,2]))
+```
+
+```
+## [1] 10395
+```
+### What is the average daily activity pattern?
+
+Now I want to know the averages over each 5 minute interval. IÂ´ll build up a second table, tabela2  and then plot the #steps per 5 minute interval
+
+
+```r
+#determine average number of steps in the 5 minute intervals across all days 
+intf<-factor(dfNOna$interval)
+intervals<-levels(intf)
+tabela2<-c()
+for (intervalo in intervals) {
+  ss<-subset(dfNOna, interval==intervalo, select=steps)
+  values<-c(intervalo, mean(ss$steps))
+  tabela2<-rbind(values, tabela2)
+}
+tabela2<-apply(tabela2,2,rev)
+# (Q1. plot acroos all days)
+plot(tabela2[,1], main="All Days", xlab="interval",ylab="steps",tabela2[,2], type="l")
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
 
 It can be seen that the maximum number of steps per interval is:
 
+
+```r
+# maximum number of steps
+max(as.numeric(tabela2[,2]))
+```
+
+```
+## [1] 206.1698
+```
 which occours at the interval:
 
+```r
+# (Q2. 5-minute interval with maximum number of steps)
+which.max(tabela2[,2])
+```
+
+```
+## values 
+##    104
+```
 ### Imputing missing values
 
-Now I´m going to replace the excluded NAs with values that will be estimated as the average #steps for the existing data. 
-First I´ll calculate the number of NA rows in the original data frame:
+Now IÂ´m going to replace the excluded NAs with values that will be estimated as the average #steps for the existing data. 
+First IÂ´ll calculate the number of NA rows in the original data frame:
 
-Then I´ll calculate the average over valid values in media_geral and use it as a criteria for fill in NA values.So a new data.frame (dfFull) will be constructed from the original one (df) and the same steps taken before will be repeated.
 
+```r
+#determine the number of NA rows in original data frame (Q1.)
+NArows<-nrow(df)-nrow(dfNOna)
+NArows
+```
+
+```
+## [1] 2304
+```
+
+```r
+#calculate a criteria for the replace of the NA values (Q2.)
+```
+Then IÂ´ll calculate the average over valid values in media_geral and use it as a criteria for fill in NA values.So a new data.frame (dfFull) will be constructed from the original one (df) and the same steps taken before will be repeated.
+
+
+
+```r
+# criteria: media_geral is an average through valid step values and corresponding days
+media_geral<- sum(as.numeric(tabela1[,2]))/(61*288-NArows)
+#assemble a new and complete data frame (dfFull) with the averaged values (Q3.) 
+dfFull<-df
+tabela3<-c()
+for (day in days){
+  dfFull$steps[is.na(dfFull$steps)&dfFull$date==day]<-media_geral
+  ss<-subset(dfFull, date==day, select=steps)
+  values<-c(day, sum(ss$steps), mean(ss$steps))
+  tabela3<-rbind(values, tabela3)
+}
+tabela3<-apply(tabela3,2,rev)
+plot(tabela3[,2],main="All Days (NAs replaced)", xlab="days",ylab="steps", type="h")
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
+```r
+# (3. mean and median # steps, with NA replaced)
+```
 Mean and median for the stuffed data frame:
 
+
+```r
+mean(as.numeric(tabela3[,2]))
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+median(as.numeric(tabela3[,2]))
+```
+
+```
+## [1] 10766.19
+```
 ### Are there differences in activity patterns between weekdays and weekends?
 
-Now I´m going to compare weekdays to weekend behaviours.
+Now IÂ´m going to compare weekdays to weekend behaviours.
 A factor variable (period, with 2 levels, weekday and weekend) will be added to the full data frame
 
+
+```r
+#ading a factor variable period for weekends and weekdays
+semana<-c("segunda-feira","terÃ§a-feira","quarta-feira","quinta-feira","sexta-feira")
+#categorizing the days by the week period
+dfFull$period<-"weekend"
+for (day in days){
+  #dfTest$period[weekdays(as.Date(dfTest$date[dfTest$date==day])) %in% semana]<-"weekday"
+  dia<-subset(dfFull, date==day, select=date)
+  if (weekdays(as.Date(dia$date)) %in% semana) {
+    dfFull$period[dfFull$date == day]<-"weekday"
+  } 
+}  
+
+tabela4<-c()
+tabela5<-c()
+for (intervalo in intervals) {
+  ss1<-subset(dfFull, interval==intervalo & period=="weekday", select=steps)
+  values<-c(intervalo, mean(ss1$steps), "weekday")
+  tabela4<-rbind(values, tabela4)
+  ss2<-subset(dfFull, interval==intervalo & period=="weekend", select=steps)
+  values<-c(intervalo, mean(ss2$steps), "weekend")
+  tabela5<-rbind(values, tabela5)
+}
+
+tabela4<-apply(tabela4,2,rev)
+tabela5<-apply(tabela5,2,rev)
+```
 Now I join vertically the two tables into a new data.frame (dfm), rename columns, delete row names and plot a panel
 
+
+```r
+dfm<-rbind(as.data.frame.matrix(tabela4), as.data.frame.matrix(tabela5))
+colnames(dfm)<-c("interval", "steps", "period")
+rownames(dfm)<-NULL
+# loading lattice libray for panel plotting
+library(datasets)
+library(lattice)
+# converting fators to numeric
+x<-as.numeric(levels(dfm$steps))[dfm$steps]
+y<-as.numeric(levels(dfm$interval))[dfm$interval]
+xyplot(x~y|period, data = dfm, type="l",xlab="Interval", ylab="Number of Steps", layout=c(1,2))
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
 
 
