@@ -125,22 +125,31 @@ tabela4<-c()
 tabela5<-c()
 for (intervalo in intervals) {
   ss1<-subset(dfFull, interval==intervalo & period=="weekday", select=steps)
-  values<-c(intervalo, mean(ss1$steps))
+  values<-c(intervalo, mean(ss1$steps), "weekday")
   tabela4<-rbind(values, tabela4)
   ss2<-subset(dfFull, interval==intervalo & period=="weekend", select=steps)
-  values<-c(intervalo, mean(ss2$steps))
+  values<-c(intervalo, mean(ss2$steps), "weekend")
   tabela5<-rbind(values, tabela5)
 }
 
 tabela4<-apply(tabela4,2,rev)
 tabela5<-apply(tabela5,2,rev)
 
-par(mfrow=c(2,1))
 ````
+Now I join vertically the two tables into a new data.frame (dfm), rename columns, delete row names and plot a panel
 
-```{r echo=FALSE}
-plot(tabela4[,1], main="Weekdays", xlab="interval",ylab="steps", tabela4[,2], type="l")
-plot(tabela5[,1], main="Weekends", xlab="interval",ylab="steps", tabela5[,2], type="l")
+```{r}
+dfm<-rbind(as.data.frame.matrix(tabela4), as.data.frame.matrix(tabela5))
+colnames(dfm)<-c("interval", "steps", "period")
+rownames(dfm)<-NULL
+# loading lattice libray for panel plotting
+library(datasets)
+library(lattice)
+# converting fators to numeric
+x<-as.numeric(levels(dfm$steps))[dfm$steps]
+y<-as.numeric(levels(dfm$interval))[dfm$interval]
+xyplot(x~y|period, data = dfm, type="l",xlab="Interval", ylab="Number of Steps", layout=c(1,2))
+
 ```
 
 
